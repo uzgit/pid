@@ -46,6 +46,7 @@
 #include <std_msgs/Float64MultiArray.h>
 #include <stdio.h>
 #include <string>
+#include <geometry_msgs/Vector3.h>
 
 namespace pid_ns
 {
@@ -64,6 +65,7 @@ private:
   void plantStateCallback(const std_msgs::Float64& state_msg);
   void printParameters();
   void reconfigureCallback(pid::PidConfig& config, uint32_t level);
+  void subscribe_reconfigure_callback(const geometry_msgs::Vector3::ConstPtr& msg);
   void setpointCallback(const std_msgs::Float64& setpoint_msg);
   bool validateParameters();
 
@@ -121,6 +123,7 @@ private:
   ros::Publisher pid_debug_pub_;
 
   std::string topic_from_controller_, topic_from_plant_, setpoint_topic_, pid_enable_topic_;
+  std::string reconfigure_topic_;
   std::string pid_debug_pub_name_;
   std_msgs::Float64 control_msg_, state_msg_;
 

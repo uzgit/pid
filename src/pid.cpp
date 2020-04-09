@@ -27,6 +27,7 @@ PidObject::PidObject() : error_(3, 0), filtered_error_(3, 0), error_deriv_(3, 0)
   node_priv.param<std::string>("topic_from_plant", topic_from_plant_, "state");
   node_priv.param<std::string>("setpoint_topic", setpoint_topic_, "setpoint");
   node_priv.param<std::string>("pid_enable_topic", pid_enable_topic_, "pid_enable");
+  node_priv.param<std::string>("reconfigure_topic", reconfigure_topic_, "NOT SET");
   node_priv.param<double>("max_loop_frequency", max_loop_frequency_, 1.0);
   node_priv.param<double>("min_loop_frequency", min_loop_frequency_, 1000.0);
   node_priv.param<std::string>("pid_debug_topic", pid_debug_pub_name_, "pid_debug");
@@ -50,6 +51,7 @@ PidObject::PidObject() : error_(3, 0), filtered_error_(3, 0), error_deriv_(3, 0)
   ros::Subscriber plant_sub_ = node.subscribe(topic_from_plant_, 1, &PidObject::plantStateCallback, this);
   ros::Subscriber setpoint_sub_ = node.subscribe(setpoint_topic_, 1, &PidObject::setpointCallback, this);
   ros::Subscriber pid_enabled_sub_ = node.subscribe(pid_enable_topic_, 1, &PidObject::pidEnableCallback, this);
+  ros::Subscriber reconfigure_sub_ = node.subscribe(reconfigure_topic_, 1, &PidObject::subscribe_reconfigure_callback, this);
 
   if (!plant_sub_ || !setpoint_sub_ || !pid_enabled_sub_)
   {
@@ -150,6 +152,7 @@ void PidObject::printParameters()
   std::cout << "Name of topic from controller: " << topic_from_controller_ << std::endl;
   std::cout << "Name of topic from the plant: " << topic_from_plant_ << std::endl;
   std::cout << "Name of setpoint topic: " << setpoint_topic_ << std::endl;
+  std::cout << "Name of reconfigure topic: " << reconfigure_topic_ << std::endl;
   std::cout << "Integral-windup limit: " << windup_limit_ << std::endl;
   std::cout << "Saturation limits: " << upper_limit_ << "/" << lower_limit_ << std::endl;
   std::cout << "-----------------------------------------" << std::endl;
@@ -172,6 +175,14 @@ void PidObject::reconfigureCallback(pid::PidConfig& config, uint32_t level)
   Ki_ = config.Ki * config.Ki_scale;
   Kd_ = config.Kd * config.Kd_scale;
   ROS_INFO("Pid reconfigure request: Kp: %f, Ki: %f, Kd: %f", Kp_, Ki_, Kd_);
+}
+
+void PidObject::subscribe_reconfigure_callback(const geometry_msgs::Vector3::ConstPtr& msg)
+{
+	Kp_ = msg->x;
+	Ki_ = msg->y;
+	Kd_ = msg->z;
+	ROS_INFO("Reconfiguring PID <%s> with (Kp, Ki, Kd) = (%f, %f, %f)", ros::this_node::getName(), Kp_, Ki_, Kd_);
 }
 
 void PidObject::doCalcs()
